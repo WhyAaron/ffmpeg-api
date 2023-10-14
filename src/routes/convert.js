@@ -4,27 +4,28 @@ const ffmpeg = require('fluent-ffmpeg');
 const constants = require('../constants.js');
 const logger = require('../utils/logger.js')
 const utils = require('../utils/utils.js')
+const { repair } = require('../middleware/repair.js')
 
 var router = express.Router()
 
-
 //routes for /convert
 //adds conversion type and format to res.locals. to be used in final post function
-router.post('/audio/to/mp3', function (req, res,next) {
+router.post('/audio/to/mp3', repair, function (req, res,next) {
 
     res.locals.conversion="audio";
     res.locals.format="mp3";
     return convert(req,res,next);
 });
 
-router.post('/audio/to/wav', function (req, res,next) {
+router.post('/audio/to/wav', repair, function (req, res,next) {
 
     res.locals.conversion="audio";
     res.locals.format="wav";
     return convert(req,res,next);
+
 });
 
-router.post('/video/to/mp4', function (req, res,next) {
+router.post('/video/to/mp4', repair, function (req, res,next) {
 
     res.locals.conversion="video";
     res.locals.format="mp4";
