@@ -5,6 +5,7 @@ const uniqueFilename = require('unique-filename');
 
 var router = express.Router()
 const logger = require('../utils/logger.js')
+const utils = require('../utils/utils.js')
 
 //route to handle file upload in all POST requests
 //file is saved to res.locals.savedFile and can be used in subsequent routes.
@@ -18,7 +19,7 @@ router.use(function (req, res,next) {
         let hitLimit = false;
         let fileName = '';
         var savedFile = uniqueFilename('/tmp/');
-        let busboy = new Busboy({
+        let busboy = Busboy({
             headers: req.headers,
             limits: {
                 fields: 0, //no non-files allowed
@@ -37,12 +38,11 @@ router.use(function (req, res,next) {
         });
 
         busboy.on('file', function(
-            fieldname,
+            name,
             file,
-            filename,
-            encoding,
-            mimetype
+            info
         ) {
+            const { filename, encoding, mimeType } = info;
             file.on('limit', function(file) {
                 hitLimit = true;
                 let msg = `${filename} exceeds max size limit. max file size ${fileSizeLimit} bytes.`
@@ -51,17 +51,17 @@ router.use(function (req, res,next) {
                 res.end(JSON.stringify({error: msg}));
             });
             let log = {
-                file: filename,
+                name: filename,
                 encoding: encoding,
-                mimetype: mimetype,
+                mimetype: mimeType,
             };
-            logger.debug(`file:${log.file}, encoding: ${log.encoding}, mimetype: ${log.mimetype}`);
+            logger.debug(`file:${log.name}, encoding: ${log.encoding}, mimetype: ${log.mimetype}`);
             file.on('data', function(data) {
                 bytes += data.length;
             });
             file.on('end', function(data) {
                 log.bytes = bytes;
-                logger.debug(`file: ${log.file}, encoding: ${log.encoding}, mimetype: ${log.mimetype}, bytes: ${log.bytes}`);
+                logger.debug(`file: ${log.name}, encoding: ${log.encoding}, mimetype: ${log.mimetype}, bytes: ${log.bytes}`);
             });
 
             fileName = filename;
@@ -72,7 +72,7 @@ router.use(function (req, res,next) {
                 logger.debug(`${fileName} saved, path: ${savedFile}`)
             }
         });
-        busboy.on('finish', function() {
+        busboy.on('close', function() {
             if (hitLimit) {
                 utils.deleteFile(savedFile);
                 return;

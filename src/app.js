@@ -38,11 +38,6 @@ app.use('/video/extract', extract);
 var probe = require('./routes/probe.js');
 app.use('/probe', probe);
 
-require('express-readme')(app, {
-    filename: 'index.md',
-    routes: ['/'],
-});
-
 const server = app.listen(constants.serverPort, function() {
     let host = server.address().address;
     let port = server.address().port;
